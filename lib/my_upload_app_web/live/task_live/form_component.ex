@@ -22,6 +22,7 @@ defmodule MyUploadAppWeb.TaskLive.FormComponent do
         <.input field={@form[:title]} type="text" label="Title" />
         <.input field={@form[:completed]} type="checkbox" label="Completed" />
         <.input field={@form[:due_date]} type="date" label="Due date" />
+        <.live_file_input upload={@uploads.avatar} />
         <:actions>
           <.button phx-disable-with="Saving...">Save Task</.button>
         </:actions>
@@ -37,7 +38,8 @@ defmodule MyUploadAppWeb.TaskLive.FormComponent do
     {:ok,
      socket
      |> assign(assigns)
-     |> assign_form(changeset)}
+     |> assign_form(changeset)
+     |> allow_upload(:avatar, accept: ~w(.jpg .jpeg .png), max_entries: 2)}
   end
 
   @impl true
@@ -51,6 +53,16 @@ defmodule MyUploadAppWeb.TaskLive.FormComponent do
   end
 
   def handle_event("save", %{"task" => task_params}, socket) do
+    # consume the temporary files, put them wherever you want.
+    uploaded_files =
+      consume_uploaded_entries(socket, :avatar, fn %{path: path}, entry ->
+        {path, entry}
+      end)
+
+    # returned values from `consume_uploaded_entries` can then be stored in the
+    # database or whatever.
+    dbg(uploaded_files)
+
     save_task(socket, socket.assigns.action, task_params)
   end
 
